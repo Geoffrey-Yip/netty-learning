@@ -23,6 +23,7 @@ import io.netty.util.CharsetUtil;
 
 /**
  * 使用Netty完成一个简易的HTTP server 端
+ * 请求<a href="http://localhost:8080">服务API</a>时将返回 "Hello netty!"
  *
  * @author Geoffrey.Yip
  */
@@ -44,7 +45,7 @@ public class SimpleHttpServer {
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     protected void initChannel(SocketChannel channel) throws Exception {
                         ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addLast("HttpServerCodec",new HttpServerCodec())
+                        pipeline.addLast("HttpServerCodec", new HttpServerCodec())
                                 .addLast("HttpServerApiHandler", new HttpServerApiHandler());
                     }
                 }).bind(8080).sync();
