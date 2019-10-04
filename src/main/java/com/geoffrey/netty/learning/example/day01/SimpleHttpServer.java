@@ -16,13 +16,14 @@ import io.netty.handler.codec.http.DefaultFullHttpResponse;
 import io.netty.handler.codec.http.FullHttpResponse;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpObject;
+import io.netty.handler.codec.http.HttpRequest;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.HttpServerCodec;
 import io.netty.handler.codec.http.HttpVersion;
 import io.netty.util.CharsetUtil;
 
 /**
- * <p>使用Netty完成一个简易的HTTP server端</p>
+ * <p>使用Netty完成一个简易的HTTP server</p>
  * 请求<a href="http://localhost:8080">服务API</a>时将返回 "Hello netty!"
  *
  * @author Geoffrey.Yip
@@ -42,21 +43,64 @@ public class SimpleHttpServer {
 
         ChannelFuture channelFuture = new ServerBootstrap().group(parentGroup, childGroup)
                 .channel(NioServerSocketChannel.class)
-                .childHandler(new ChannelInitializer<SocketChannel>() {
-                    protected void initChannel(SocketChannel channel) throws Exception {
-                        ChannelPipeline pipeline = channel.pipeline();
-                        pipeline.addLast("HttpServerCodec", new HttpServerCodec())
-                                .addLast("HttpServerApiHandler", new HttpServerApiHandler());
-                    }
-                }).bind(8080).sync();
+                .childHandler(new HttpChannelInitializer()).bind(8080).sync();
 
         channelFuture.channel().closeFuture().sync();
+    }
+
+    public static class HttpChannelInitializer extends ChannelInitializer<SocketChannel> {
+
+        @Override
+        protected void initChannel(SocketChannel ch) throws Exception {
+            ChannelPipeline pipeline = ch.pipeline();
+            pipeline.addLast("HttpServerCodec", new HttpServerCodec())
+                    .addLast("HttpServerApiHandler", new HttpServerApiHandler());
+        }
+
+
+        @Override
+        public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+            System.out.println("handler removed");
+            super.handlerRemoved(ctx);
+        }
+
+        @Override
+        public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+            System.out.println("handler Added");
+            super.handlerAdded(ctx);
+        }
+
+        @Override
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+            System.out.println("channel unregisted");
+            super.channelUnregistered(ctx);
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            System.out.println("channel active");
+            super.channelActive(ctx);
+        }
+
+        @Override
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            System.out.println("channel inactive");
+            super.channelInactive(ctx);
+        }
     }
 
 
     public static class HttpServerApiHandler extends SimpleChannelInboundHandler<HttpObject> {
 
         protected void channelRead0(ChannelHandlerContext ctx, HttpObject msg) throws Exception {
+
+            if (!(msg instanceof HttpRequest)) {
+                return;
+            }
+            HttpRequest req = (HttpRequest) msg;
+
+            System.out.println("Received request method :" + req.method().name());
+            System.out.println("Received request uri :" + req.uri());
 
             // Write message to browser
             ByteBuf responseContent = Unpooled.copiedBuffer("Hello netty!", CharsetUtil.UTF_8);
@@ -69,5 +113,7 @@ public class SimpleHttpServer {
             response.headers().add(HttpHeaderNames.CONTENT_LENGTH, responseContent.readableBytes());
             ctx.writeAndFlush(response);
         }
+
+
     }
 }
