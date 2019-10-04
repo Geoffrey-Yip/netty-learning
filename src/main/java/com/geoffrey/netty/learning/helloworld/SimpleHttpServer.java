@@ -1,4 +1,4 @@
-package com.geoffrey.netty.learning.example.day01;
+package com.geoffrey.netty.learning.helloworld;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
